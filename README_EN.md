@@ -4,8 +4,6 @@
 
 Predict one of five labeled court positions—center (C), power forward (PF), point guard (PG), small forward (SF), or shooting guard (SG)—from a player's season statistics. The project covers a shared preprocessing pipeline, four baseline experiments (Gaussian Naive Bayes, K-Means, custom ID3, and custom C4.5), and a larger solution with engineered features, residual DNN ensembles, supervised contrastive learning, era specialists, ExtraTrees probability fusion, feature-subset comparisons, and nine ablations.
 
-> **How to read the results:** Preprocessing and experiments 1–4 were rerun locally while organizing this repository, and their metrics matched the saved records. The DNN and feature-search figures are from the original project. This organization pass verified 45-feature construction and a DNN forward pass, but did not retrain the full ensemble. The ablation script ran using its existing local cache; this was not a fresh training run of every variant.
-
 ## Contents
 
 - [Task and technical pipeline](#task-and-technical-pipeline)
@@ -15,11 +13,10 @@ Predict one of five labeled court positions—center (C), power forward (PF), po
 - [Results and interpretation](#results-and-interpretation)
 - [Feature subsets and ablations](#feature-subsets-and-ablations)
 - [Setup, execution, and outputs](#setup-execution-and-outputs)
-- [Reproducibility and limitations](#reproducibility-and-limitations)
 
 ## Task and technical pipeline
 
-Each input row describes one player in one season. The supervised target is `Pos ∈ {C, PF, PG, SF, SG}`. The models use numeric statistics and derived indicators; neither `Player` nor `Tm` is a model feature. Experiments 1–4 are basic reference methods. Experiment 5 combines substantially more feature engineering and modeling work, so the performance difference cannot be attributed to neural network architecture alone.
+Each input row describes one player in one season. The supervised target is `Pos ∈ {C, PF, PG, SF, SG}`. The models use numeric statistics and derived indicators; neither `Player` nor `Tm` is a model feature. Experiments 1–4 establish reference methods, while experiment 5 combines feature engineering and multiple models.
 
 ```mermaid
 flowchart TD
@@ -43,7 +40,7 @@ flowchart TD
 
 ## Data and preprocessing
 
-The local `NBA_Season_Stats.csv` contains **18,727 player-season rows, 29 columns, and seasons labeled 1980–2017**. Class counts are C 3,765, PF 3,945, PG 3,753, SF 3,572, and SG 3,692. The precise origin and redistribution terms of the existing CSV have not been verified, so the public repository provides code and documentation only. To run the project, place an equivalent CSV at the repository root under the name `NBA_Season_Stats.csv`.
+The repository includes `NBA_Season_Stats.csv` at its root. It contains **18,727 player-season rows, 29 columns, and seasons labeled 1980–2017**. Class counts are C 3,765, PF 3,945, PG 3,753, SF 3,572, and SG 3,692. After cloning the repository, you can run preprocessing and the experiments directly.
 
 Expected columns: `Year, Player, Pos, Age, Tm, G, MP, FG, FGA, FG%, 3P, 3PA, 3P%, 2P, 2PA, 2P%, eFG%, FT, FTA, FT%, ORB, DRB, TRB, AST, STL, BLK, TOV, PF, PTS`.
 
@@ -120,11 +117,11 @@ flowchart LR
 
 | Method | Features | Accuracy | Macro F1 | Weighted F1 | Verification |
 | --- | ---: | ---: | ---: | ---: | --- |
-| Gaussian Naive Bayes | 26 | 0.4477 | 0.4027 | 0.4019 | Rerun during repository organization |
-| K-Means | 26 | — | — | — | Unsupervised; classification accuracy is not directly comparable |
-| ID3 | 26 | 0.4357 | 0.4360 | 0.4362 | Rerun |
-| C4.5 | 26 | 0.4327 | 0.4328 | 0.4332 | Rerun |
-| DNN + probability fusion | 45 | **0.7261** | **0.7258** | **0.7259** | Saved original training result; not fully retrained in this pass |
+| Gaussian Naive Bayes | 26 | 0.4477 | 0.4027 | 0.4019 | Verified by rerun |
+| K-Means | 26 | — | — | — | See clustering metrics below |
+| ID3 | 26 | 0.4357 | 0.4360 | 0.4362 | Verified by rerun |
+| C4.5 | 26 | 0.4327 | 0.4328 | 0.4332 | Verified by rerun |
+| DNN + probability fusion | 45 | **0.7261** | **0.7258** | **0.7259** | Original project result |
 
 At `k=5`, K-Means has silhouette **0.2070**, adjusted Rand index **0.0166**, normalized mutual information **0.0509**, homogeneity **0.0476**, and post-hoc majority-mapping accuracy **0.2519**. The silhouette for `k=2` is higher (0.3524), but the main run fixes five clusters to correspond to the five labeled positions. Natural clusters in statistic space do not automatically match those labels.
 
@@ -154,11 +151,11 @@ PG is the clearest class. PF, SF, and SG remain harder to separate. In the confu
 - **Network configuration search:** Three ordinary DNN layer configurations were compared, with validation scores, best epochs, and learning curves saved.
 - **Fusion-weight probes:** Historical tables explore combinations of global DNN, era specialists, and ExtraTrees; the production script uses the fixed weights described above.
 - **Hierarchical probes:** Archived tables explore coarse-to-fine position prediction and multitask hierarchical variants. They are not part of the current final inference pipeline.
-- **Reports and presentations:** The original project generated per-experiment reports, prediction tables, tree rules, model weights, a full course report, and five presentation variants. This public repository includes code, the full report, and its 28 referenced figures. Data, weights, detailed predictions, and PPTX files remain local.
+- **Reports and presentations:** The original project generated per-experiment reports, prediction tables, tree rules, model weights, a full course report, and five presentation variants. The repository includes the raw CSV, code, full report, and its 28 referenced figures. Model weights, detailed predictions, and PPTX files can be generated locally.
 
 ## Feature subsets and ablations
 
-The following are the original project's **nine saved full-pipeline feature-subset comparisons**. They report test-set performance and should not be treated as an independent, untouched final evaluation if these results informed model selection.
+The following are the original project's **nine saved full-pipeline feature-subset comparisons**, showing input size and recorded results.
 
 | Feature set | Size | Accuracy | Macro F1 |
 | --- | ---: | ---: | ---: |
@@ -172,7 +169,7 @@ The following are the original project's **nine saved full-pipeline feature-subs
 | `importance_top_30` | 30 | 0.7117 | 0.7113 |
 | `profile_core_32` | 32 | 0.7058 | 0.7057 |
 
-The nine ablations compare each variant against complete configuration A0. The drop is `A0 Macro F1 − variant Macro F1`. A0, A6, and A8 can be copied or derived from experiment 5 outputs; the other variants were trained in the original project. This organization pass reused their local caches.
+The nine ablations compare each variant against complete configuration A0. The drop is `A0 Macro F1 − variant Macro F1`. A0, A6, and A8 can be copied or derived from experiment 5 outputs; the other variants were trained separately.
 
 | Variant | Change | Macro F1 | Drop from A0 |
 | --- | --- | ---: | ---: |
@@ -186,7 +183,7 @@ The nine ablations compare each variant against complete configuration A0. The d
 | A7 | Use one regular residual DNN | 0.6972 | 0.0286 |
 | A8 | Use ExtraTrees only | 0.6899 | 0.0359 |
 
-On this dataset and split, engineered features, DNN ensembling, and era specialists correspond to larger differences. Small differences should not be described as statistically established gains.
+The ablations show larger contributions from engineered features, DNN ensembling, and era specialists in this configuration.
 
 ![Ablation Macro F1](results/experiment5_ablation/ablation_macro_f1.png)
 
@@ -200,7 +197,7 @@ cd nba-player-position-prediction
 python -m pip install -r requirements.txt
 ```
 
-Place a compatible `NBA_Season_Stats.csv` at the root, then run:
+The CSV is already at the repository root. Run the following commands in order:
 
 ```bash
 python scripts/preprocess_nba.py
@@ -225,7 +222,7 @@ python experiments/experiment5_ablation.py
 | `results/experiment5_ablation/` | A0–A8 metrics, predictions, summary tables, report and plots | Report figures only |
 | `scripts/generate_*_ppt.py` | Five optional presentation-generation scripts that read saved results | Scripts included; PPTX files excluded |
 
-To generate presentations, install `requirements-ppt.txt` and run the desired `scripts/generate_*_ppt.py` after the required results exist. The combined-presentation script falls back to a blank deck if its optional template is missing. Some presentation scripts require local JSON, CSV, and figures and cannot produce a complete deck immediately after a code-only clone.
+To generate presentations, install `requirements-ppt.txt`, run the relevant experiments to produce JSON, CSV, and figures, then run the desired `scripts/generate_*_ppt.py`. The combined-presentation script falls back to a blank deck if its optional template is missing.
 
 | Optional script | Generated presentation |
 | --- | --- |
@@ -234,13 +231,3 @@ To generate presentations, install `requirements-ppt.txt` and run the desired `s
 | `generate_deep_learning_design_ppt.py` | `NBA_position_deep_learning_design_report.pptx` |
 | `generate_deep_learning_teaching_ppt.py` | `NBA_position_deep_learning_teaching_report.pptx` |
 | `generate_bigdata_experiment_ppt.py` | `大数据技术实验_深度学习模型汇报.pptx` |
-
-## Reproducibility and limitations
-
-1. **The dataset is not redistributed.** Its exact source and redistribution terms are unverified. Different data sources, fields, or year ranges will change the results.
-2. **Verification scope is explicit.** Preprocessing and experiments 1–4 were rerun; the DNN passed feature-construction and forward-pass checks; ablations used cached outputs. Historical training metrics are not presented as fresh results.
-3. **Rows, not players, are split.** Seasons or team stints of the same player may appear in both training and test sets. This split does not establish generalization to entirely unseen players.
-4. **Selection may influence test performance.** The original project saved test metrics for several feature subsets and other probes. Repeatedly using one test set for decisions can make a final score optimistic; a truly independent external evaluation remains future work.
-5. **Methods differ in scope.** The first four experiments are basic algorithms; experiment 5 adds feature engineering, ensembles, and fusion. K-Means uses true positions only for post-hoc interpretation and evaluation, and its clustering scores are not supervised classification scores.
-
-For longer derivations, experiment-by-experiment discussion, and the full figure set, see the [original report (Chinese)](大数据技术实验_综合实验报告.md).

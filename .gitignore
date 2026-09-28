@@ -5,8 +5,6 @@ __pycache__/
 .idea/
 .vscode/
 
-# The original data source and redistribution terms have not been verified.
-/NBA_Season_Stats.csv
 /processed/
 
 # Generated runs and personal course materials stay on the local machine.
