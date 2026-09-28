@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.idea/
+.vscode/
+
+# The original data source and redistribution terms have not been verified.
+/NBA_Season_Stats.csv
+/processed/
+
+# Generated runs and personal course materials stay on the local machine.
+# The figures referenced by the report are explicitly tracked.
+/results/
+/*.assets/
+/*.docx
+/*.pptx
+/实验要求和说明.md
+/大数据技术实验.md
